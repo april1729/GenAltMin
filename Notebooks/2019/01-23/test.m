@@ -1,0 +1,1 @@
+tic;[P,obj3]=bbpsd(P0, eye(r),A,b,{methods{m}, r,.5, 10000,1e-4});toc

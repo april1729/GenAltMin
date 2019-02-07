@@ -1,0 +1,12 @@
+m=100;
+n=10000;
+s=300;
+
+A=(rand(m,n)-0.5)*10;
+xSoln=zeros(n,1);
+xSoln(datasample(1:n, s))=rand(s,1)*5;
+b=A*xSoln+0.1*(rand(m,1)-0.5);
+
+[x,obj]=sparseOptimizationMM(zeros(n,1), [], [], 0, A,b, {"MR", 3});
+
+xL = linprog(w,[],[],A,b, zeros(n,1), []);

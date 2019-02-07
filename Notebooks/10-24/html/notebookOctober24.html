@@ -1,0 +1,212 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>October 17th-24th, 2018 Notebook</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-10-24"><meta name="DC.source" content="notebookOctober24.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>October 17th-24th, 2018 Notebook</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Aggregated Relaxation Results</a></li><li><a href="#2">What it looks like when Aggregated Relaxation does better than Nuclear Norm</a></li><li><a href="#3">As <img src="notebookOctober24_eq04202927574850129020.png" alt="$\epsilon$" style="width:5px;height:7px;"> goes to zero:</a></li><li><a href="#4">Convergence</a></li></ul></div><h2 id="1">Aggregated Relaxation Results</h2><p>I found a bug in the code that made it so before, when the aggregated relaxation algorithm was giving the same results as the nuclear norm, it was only performing one iteration of the algorithm.</p><pre class="codeinput">load(<span class="string">'oct22run.mat'</span>)
+
+subplot(2,1,1)
+plot(pList, rankRes)
+title(<span class="string">"Aggregated Relaxtion for a 50x50, Rank 10 PSD Matrix"</span>)
+hold <span class="string">on</span>
+plot(pList, rankResnuc)
+legend([<span class="string">'eps=0'</span>, <span class="string">'eps=0.1'</span>, <span class="string">'eps=1'</span>,<span class="string">"eps=5"</span>, <span class="string">"Nuc Norm"</span>],<span class="string">'Location'</span>,<span class="string">'bestoutside'</span>)
+set(gcf, <span class="string">'Units'</span>, <span class="string">'Normalized'</span>, <span class="string">'OuterPosition'</span>, [.2, 0.2, .8, 0.8]);
+
+ylabel(<span class="string">"Rank"</span>)
+
+subplot(2,1,2)
+plot(pList, relErr)
+hold <span class="string">on</span>
+plot(pList, relErrnuc)
+ylabel(<span class="string">"Relative Error"</span>)
+xlabel(<span class="string">"Percent of data missing"</span>)
+</pre><img vspace="5" hspace="5" src="notebookOctober24_01.png" style="width:1009px;height:489px;" alt=""> <h2 id="2">What it looks like when Aggregated Relaxation does better than Nuclear Norm</h2><p>For the case of ~70% missing data, the Nuclear Norm fails to reconstruct a rank 10 solution, while the Aggregated Relaxation for $ \epsilon = 2.5 $ does.  The SVD of this result looks like this.  What we see is the first 10 singular values are all approprietely large, while the last 40, which are zero for the original matrix, are all less than a threshold dependent on <img src="notebookOctober24_eq04202927574850129020.png" alt="$\epsilon$" style="width:5px;height:7px;">.  As <img src="notebookOctober24_eq04202927574850129020.png" alt="$\epsilon$" style="width:5px;height:7px;"> goes to zero, I would think these entries would too.</p><pre class="codeinput">pavg=0.70;
+eps=2.5;
+
+
+x=randn(10,50);
+D=x'*x;
+[ M,b,row,col ] = sampleUniform( D,pavg);
+P=~(M==0);
+[X,U, obj]= aggregatedRelaxationPADM(M,P, eps,zeros(size(M)));
+figure()
+semilogy(svd(X))
+xlabel(<span class="string">"i"</span>)
+ylabel(<span class="string">"\sigma_i"</span>)
+title(<span class="string">"Singular Value Distribution for Aggregated Relaxation Minimizer"</span>)
+</pre><img vspace="5" hspace="5" src="notebookOctober24_02.png" style="width:560px;height:420px;" alt=""> <h2 id="3">As <img src="notebookOctober24_eq04202927574850129020.png" alt="$\epsilon$" style="width:5px;height:7px;"> goes to zero:</h2><p>We showed that starting at a low value of <img src="notebookOctober24_eq04202927574850129020.png" alt="$\epsilon$" style="width:5px;height:7px;"> gives bad results, so now we start at 2.5 and decrease epsilon in every run, using the previous problems minimizer as the starting point for the new one, as done with previous SDCMPCC relaxations</p><pre class="codeinput">eps=[2.5, 2, 1.5, 1, 0.75, 0.5, 0.25, 0.125,0.0625 , 0.03125];
+Xeps={X};
+[u, s, v]=svd(Xeps{1});
+
+fprintf(<span class="string">"Eps: %f \t 11th largest sv :%f \t Rel Error: %f \n"</span>,eps(1), s(11,11), norm(Xeps{1}-D, <span class="string">'fro'</span>)/norm(D, <span class="string">'fro'</span>));
+
+<span class="keyword">for</span> i=2:length(eps)
+    [Xeps{i},U]= aggregatedRelaxationPADM(M,P, eps(i),Xeps{i-1});
+    [u, s, v]=svd(Xeps{i});
+    fprintf(<span class="string">"Eps: %f \t 11th largest sv :%f \t Rel Error: %f \n"</span>,eps(i), s(11,11), norm(Xeps{i}-D, <span class="string">'fro'</span>)/norm(D, <span class="string">'fro'</span>));
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Eps: 2.500000 	 11th largest sv :0.132180 	 Rel Error: 0.004468 
+Eps: 2.000000 	 11th largest sv :0.107383 	 Rel Error: 0.003617 
+Eps: 1.500000 	 11th largest sv :0.081637 	 Rel Error: 0.002753 
+Eps: 1.000000 	 11th largest sv :0.053444 	 Rel Error: 0.001812 
+Eps: 0.750000 	 11th largest sv :0.039001 	 Rel Error: 0.001317 
+Eps: 0.500000 	 11th largest sv :0.027019 	 Rel Error: 0.000908 
+Eps: 0.250000 	 11th largest sv :0.013677 	 Rel Error: 0.000454 
+Eps: 0.125000 	 11th largest sv :0.007304 	 Rel Error: 0.000238 
+Eps: 0.062500 	 11th largest sv :0.003662 	 Rel Error: 0.000119 
+Eps: 0.031250 	 11th largest sv :0.001843 	 Rel Error: 0.000060 
+</pre><h2 id="4">Convergence</h2><p>I'm actually just using ADMM for this, even though it has no convergence gaurentees that I know of.  I've tried adding a proximal term, but it ended up doing worse.  Perhaps theres a bug, or it just needed longer to converge. However, it does seem to do very well.  Here is the objective value at each iteration for the <img src="notebookOctober24_eq04817581041049552929.png" alt="$\epsilon =2.5$" style="width:43px;height:11px;"> run</p><pre class="codeinput">figure()
+plot(obj)
+xlabel(<span class="string">"Iteration"</span>)
+ylabel(<span class="string">"Objective"</span>)
+</pre><img vspace="5" hspace="5" src="notebookOctober24_03.png" style="width:560px;height:420px;" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% October 17th-24th, 2018 Notebook
+%
+%
+
+%% Aggregated Relaxation Results
+% I found a bug in the code that made it so before, when the aggregated
+% relaxation algorithm was giving the same results as the nuclear norm, it
+% was only performing one iteration of the algorithm.
+
+load('oct22run.mat')
+
+subplot(2,1,1)
+plot(pList, rankRes)
+title("Aggregated Relaxtion for a 50x50, Rank 10 PSD Matrix")
+hold on
+plot(pList, rankResnuc)
+legend(['eps=0', 'eps=0.1', 'eps=1',"eps=5", "Nuc Norm"],'Location','bestoutside')
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [.2, 0.2, .8, 0.8]);
+
+ylabel("Rank")
+
+subplot(2,1,2)
+plot(pList, relErr)
+hold on
+plot(pList, relErrnuc)
+ylabel("Relative Error")
+xlabel("Percent of data missing")
+
+%% What it looks like when Aggregated Relaxation does better than Nuclear Norm
+% For the case of ~70% missing data, the Nuclear Norm fails to reconstruct
+% a rank 10 solution, while the Aggregated Relaxation for $ \epsilon = 2.5
+% $ does.  The SVD of this result looks like this.  What we see is the
+% first 10 singular values are all approprietely large, while the last 40,
+% which are zero for the original matrix, are all less than a threshold
+% dependent on $\epsilon$.  As $\epsilon$ goes to zero, I would think these
+% entries would too.
+
+pavg=0.70;
+eps=2.5;
+
+
+x=randn(10,50);
+D=x'*x;
+[ M,b,row,col ] = sampleUniform( D,pavg);
+P=~(M==0);
+[X,U, obj]= aggregatedRelaxationPADM(M,P, eps,zeros(size(M)));
+figure()
+semilogy(svd(X))
+xlabel("i")
+ylabel("\sigma_i")
+title("Singular Value Distribution for Aggregated Relaxation Minimizer")
+
+%% As $\epsilon$ goes to zero:
+% We showed that starting at a low value of $\epsilon$ gives bad results,
+% so now we start at 2.5 and decrease epsilon in every run, using the
+% previous problems minimizer as the starting point for the new one, as
+% done with previous SDCMPCC relaxations
+%
+
+eps=[2.5, 2, 1.5, 1, 0.75, 0.5, 0.25, 0.125,0.0625 , 0.03125];
+Xeps={X};
+[u, s, v]=svd(Xeps{1});
+
+fprintf("Eps: %f \t 11th largest sv :%f \t Rel Error: %f \n",eps(1), s(11,11), norm(Xeps{1}-D, 'fro')/norm(D, 'fro'));
+
+for i=2:length(eps)
+    [Xeps{i},U]= aggregatedRelaxationPADM(M,P, eps(i),Xeps{i-1});
+    [u, s, v]=svd(Xeps{i});
+    fprintf("Eps: %f \t 11th largest sv :%f \t Rel Error: %f \n",eps(i), s(11,11), norm(Xeps{i}-D, 'fro')/norm(D, 'fro'));
+end
+
+%% Convergence
+% I'm actually just using ADMM for this, even though it has no convergence
+% gaurentees that I know of.  I've tried adding a proximal term, but it ended up doing
+% worse.  Perhaps theres a bug, or it just needed longer to converge.
+% However, it does seem to do very well.  Here is the objective value at
+% each iteration for the $\epsilon =2.5$ run 
+figure()
+plot(obj)
+xlabel("Iteration")
+ylabel("Objective")
+
+
+##### SOURCE END #####
+--></body></html>
