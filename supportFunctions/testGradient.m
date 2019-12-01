@@ -1,7 +1,7 @@
 function testGradient(x,fun)
 [n,r]=size(x);
 grad=zeros(n,r);
-dx=sqrt(eps);
+dx=(sqrt(eps));
 [f,g]=fun(x);
 gtest=zeros(n,r);
 for ind=datasample(1:n*r, round(log2(n*r)), 'Replace', false)
@@ -13,5 +13,5 @@ for ind=datasample(1:n*r, round(log2(n*r)), 'Replace', false)
     gtest(i,j)=g(i,j);
 end
 
-fprintf("Average error in gradient: %f \n",norm(gtest-grad,'fro')/ round(log2(n*r)))
+fprintf("Average error in gradient: %f \n",norm(gtest-grad,'fro')/round(log2(n*r)))
 

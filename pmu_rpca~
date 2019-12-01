@@ -1,0 +1,9 @@
+load('/home/april/Code/PMU_Data/NYISO_PMU_Data.mat')
+
+opts_ti.maxIter=1000;
+opts_ti.mu=20;
+opts_ti.r=20;
+opts_ti.fl=@(x) 100* (5)./(10+x).^2;
+opts_ti.fs=@(x) (.05)./(.05+x).^2;
+opts_ti.obj=@(l,s) norm(L-l, 'fro')/norm(L,'fro');
+[L_ti,S_ti, obj_ti] = GenAltMinRPCA(M, opts_ti);
