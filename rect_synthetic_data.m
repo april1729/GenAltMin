@@ -15,21 +15,21 @@ for run=1:1
         
         
         opts.r=20;
-        opts.maxIter=200;
-        opts.mu=.1;
-        opts.xTol=1e-5;
-        opts.f=@(x) 2*25./(5+x).^2;
+        opts.maxIter=2000;
+        opts.mu=1;
+        opts.xTol=1e-7;
+        opts.f=@(x) 100*50./(50+x).^2;
         
         opts.obj=@(U,V) obj(U*V', @(x) 5*x, opts.f, opts.mu, A, b);
         
-        [ U_ti,V_ti , obj_nuc] = GenAltMinSD(M,A,b,opts );
+        [ U_ti,V_ti , obj_nuc] = GenASD(M,A,b,opts );
         error(i, 1,run)=norm(U_ti*V_ti'-D,'fro')/norm(D, 'fro');
         rank_list(i,1,run)=sum(svd(U_ti*V_ti')>0.0001);
         
         
         opts.f=@(x) 1;
         
-        [ U_nuc, V_nuc, obj_ti] = GenAltMinSD(M,A,b,opts );
+        [ U_nuc, V_nuc, obj_ti] = GenASD(M,A,b,opts );
         error(i, 2, run)=norm(U_nuc*V_nuc'-D,'fro')/norm(D, 'fro');
         rank_list(i,2,run)=sum(svd(U_nuc*V_nuc')>0.0001);
         
@@ -63,6 +63,6 @@ plot(100*p_range, ones(size(p_range))*norm(A*vec(D)-b)/norm(b),'--','linewidth',
 xlabel("Percentage of Data Known")
 ylabel("Relative Frobenious Norm Error")
 legend(["Trace Inverse","Nuclear Norm", "Noisy matrix"])
-set(gca,'fontsize', 24);
+set(gca,'fontsize', 12);
 
 

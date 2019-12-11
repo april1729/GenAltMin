@@ -1,4 +1,4 @@
-function [ U,V , obj,time] = GenASD(X0,A,b,opts )
+function [ U,V , obj,time] = GenASD(M,opts )
 % Function Name: gncr_psd_exact
 % This function solves the optimization problem:
 %           min   sum_i f(sigma_i)
@@ -36,7 +36,7 @@ end
 if isfield(opts, 'xTol')
     xTol=opts.xTol;
 else
-    xTol=1e-5;
+    xTol=1e-6;
 end
 if isfield(opts, 'SDopts')
     SDopts=opts.SDopts;
@@ -67,7 +67,7 @@ end
 if isfield(opts, 'fTol')
     fTol=opts.fTol;
 else
-    fTol=1e-4;
+    fTol=1e-5;
 end
 
 
@@ -81,20 +81,20 @@ bbopts.sigma  = 0.1;
 bbopts.eta  = 0.8;
 
 
-[m,n]=size(X0);
+[m,n]=size(M);
 
-[U, D, V]=svds(X0, r);
-U=U*sqrt(D);
-V=V*sqrt(D);
+U=rand(m,r);
+V=rand(n,r);
 U1=U;
 V1=V;
 
 P=[U;V];
+[j] = find(M~=0);
 
-Lambda=zeros(size(b));
+b=M(j);
+
 W=eye(r);
-[~,j] = find(A);
-[rows,cols]=ind2sub([m,n], j);
+[row,col]=ind2sub([m,n], j);
 tic;
 for k=1:maxIter
     Pold=P;
@@ -107,19 +107,30 @@ for k=1:maxIter
     
     
     Ut=U+momentum*(U1-U2);
-    [~,d]= objectiveU(Ut,V,W,A,b,mu);
     
-    %testGradient(U,@(x) objectiveU(x,V,W,A,b,mu));
-    t=tu(Ut,V,W,A,b,mu,d);
+    UV=partXY(Ut', V', row, col, length(row));
+    PX=sparse(row, col, UV'-b,m,n);
+    d=2*Ut*W+mu*PX*V;      
+
+    gV=partXY(d', V', row, col, length(row));
+    
+    t=(2*trace(d'*U*W)+(mu)*gV*(UV'-b))/(mu*norm(gV)^2+2*trace(d'*d*W));
     
     U=Ut-t*d;
     
     
     Vt=V+momentum*(V1-V2);
-    [~,d] = objectiveV(U,Vt,W,A,b,mu);
-    %testGradient(V,@(x) objectiveV(U,x,W,A,b,mu));
+
+    UV=partXY(U', Vt', row, col, length(row));
     
-    t= tv(U,Vt,W,A,b,mu,d);
+    PX=sparse(row, col, UV'-b,m,n);
+
+    d=2*Vt*W+ mu*PX'*U;
+
+    Ug=partXY(U', d', row, col, length(row));
+    
+    
+    t= (2*trace(d'*V*W)+(mu)*Ug*(UV'-b))/(mu*norm(Ug)^2+2*trace(d'*d*W));
     
     V=Vt-t*d;
     
@@ -127,13 +138,12 @@ for k=1:maxIter
     
     [Vw,D]=eig(U'*U+V'*V);
     W=Vw*diag(f(diag(D)))*Vw';
-    X=sparse_multiply(U,V,rows, cols, m,n);
     
     time(k)=toc;
     if isfield(opts, "obj")
-        obj(k)=opts.obj(U,V);
+        obj(k)=sum(diag(D)>0.01)+mu*norm(UV-b')^2;
         if k>1
-            if (obj(k-1)-obj(k))/obj(k)<fTol
+            if abs(obj(k-1)-obj(k))/obj(k)<fTol
                 break
             end
         end
@@ -144,33 +154,6 @@ for k=1:maxIter
     
     
 end
-
-
-    function [f,g]=objectiveU(x,V,W,A,b,mu)
-        f=trace(W*(x'*x))+(mu/2)*norm(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b,'fro')^2;
-        g=2*x*W+mu*reshape(A'*(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b),[m,n])*V;
-    end
-
-    function [f,g]=objectiveV(U,x,W,A,b,mu)
-        f=trace(W*(x'*x))+(mu/2)*norm(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b,'fro')^2;
-        g=2*x*W+ mu*reshape(A'*(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b),[m,n])'*U;
-    end
-
-
-    function [t]=tu(U,V,W,A,b,mu,g)
-        UV=sparse_multiply(U,V, rows, cols,m,n);
-        gV=sparse_multiply(g,V, rows, cols,m,n);
-        t=(2*trace(g'*U*W)+(mu)*(A*vec(gV))'*(A*(vec(UV))-b))/(mu*norm(A*vec(gV), 'fro')^2+2*trace(g'*g*W));
-    end
-
-    function t=tv(U,V,W,A,b,mu,g)
-        
-        
-        UV=sparse_multiply(U,V, rows, cols,m,n);
-        Ug=sparse_multiply(U,g, rows, cols,m,n);
-        t=(2*trace(g'*V*W)+(mu)*(A*vec(Ug))'*(A*(vec(UV))-b))/(mu*norm(A*vec(Ug), 'fro')^2+2*trace(g'*g*W));
-        
-    end
 end
 
 

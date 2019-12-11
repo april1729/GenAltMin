@@ -17,7 +17,7 @@ end
 if isfield(opts, 'xTol')
     xTol=opts.xTol;
 else
-    xTol=1e-4;
+    xTol=1e-5;
 end
 if isfield(opts, 'r')
     r=opts.r;
@@ -34,7 +34,7 @@ end
 if isfield(opts, 'fTol')
     fTol=opts.fTol;
 else
-    fTol=1e-5;
+    fTol=1e-6;
 end
 [m,n]=size(M);
 [rows,cols]=ind2sub([m,n], find(Omega==1));
@@ -46,35 +46,33 @@ data=M(Known);
 X=randn(m,r);
 Y=randn(n,r);
 P=[X;Y];
-theta=1;
 W=eye(r);
 Z=M;
 tic;
+theta=1;
 time=[];obj=[];
 for k=1:maxIter
     
-    Xp=mu*(Z*Y)*pinv((W+mu*Y'*Y));
-    X=theta*Xp+(1-theta)*X;
+    X=(Z*Y)*pinv((W/mu+Y'*Y));
     
-    Yp=mu*(Z'*X)*(pinv(W+mu*X'*X));
-    Y=theta*Yp+(1-theta)*Y;
+    Y=(Z'*X)*(pinv(W/mu+X'*X));
+
+    
     Z = X*Y';  Res =  data - Z(Known);
     Z(Known) = data  + theta * Res;
+    
     [Vw,D]=eig(X'*X+Y'*Y);
-    
-    
     W=Vw*diag(f(diag(D)))*Vw';
     
     Pold=P;
     P=[X;Y];
     
     
-    
     time(k)=toc;
         if isfield(opts, "obj")
             obj(k)=sum(diag(D)>0.1)+mu*norm(Res)^2;
             if k>2
-                if (obj(k-1)-obj(k))/obj(k)<fTol
+                if abs(obj(k-1)-obj(k))/obj(k)<fTol
                    break
                 end
             end
