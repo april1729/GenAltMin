@@ -41,7 +41,7 @@ end
 if isfield(opts, 'SDopts')
     SDopts=opts.SDopts;
 else
-    SDopts.maxIter=100;
+    SDopts.maxIter=15;
     SDopts.xTol=1e-5;
     SDopts.fTol=1e-5;
 end

@@ -36,14 +36,12 @@ end
 if isfield(opts, 'xTol')
     xTol=opts.xTol;
 else
-    xTol=1e-6;
+    xTol=0;
 end
-if isfield(opts, 'SDopts')
-    SDopts=opts.SDopts;
+if isfield(opts, 'gamma')
+    gamma=opts.gamma;
 else
-    SDopts.maxIter=100;
-    SDopts.xTol=1e-5;
-    SDopts.fTol=1e-5;
+    gamma=1000;
 end
 
 if isfield(opts, 'exact')
@@ -67,19 +65,14 @@ end
 if isfield(opts, 'fTol')
     fTol=opts.fTol;
 else
-    fTol=1e-5;
+    fTol=1e-8;
 end
 
-
-bbopts.maxit = 50;
-bbopts.xtol = 1e-5;
-bbopts.gtol = 1e-3;
-bbopts.ftol = 1e-5;
-bbopts.alpha  = 1e-3;
-bbopts.rho  = 1e-4;
-bbopts.sigma  = 0.1;
-bbopts.eta  = 0.8;
-
+if isfield(opts, 'scaled')
+    scaled=opts.scaled;
+else
+    scaled=0;
+end
 
 [m,n]=size(M);
 
@@ -92,7 +85,7 @@ P=[U;V];
 [j] = find(M~=0);
 
 b=M(j);
-
+p=length(b)/(m*n);
 W=eye(r);
 [row,col]=ind2sub([m,n], j);
 tic;
@@ -111,7 +104,9 @@ for k=1:maxIter
     UV=partXY(Ut', V', row, col, length(row));
     PX=sparse(row, col, UV'-b,m,n);
     d=2*Ut*W+mu*PX*V;      
-
+    if scaled 
+        d=d*inv((1/p)*mu*V'*V+W);
+    end
     gV=partXY(d', V', row, col, length(row));
     
     t=(2*trace(d'*U*W)+(mu)*gV*(UV'-b))/(mu*norm(gV)^2+2*trace(d'*d*W));
@@ -126,6 +121,9 @@ for k=1:maxIter
     PX=sparse(row, col, UV'-b,m,n);
 
     d=2*Vt*W+ mu*PX'*U;
+    if scaled 
+        d=d*inv((1/p)*mu*U'*U+W);
+    end
 
     Ug=partXY(U', d', row, col, length(row));
     
@@ -135,15 +133,15 @@ for k=1:maxIter
     V=Vt-t*d;
     
     P=[U;V];
-    
+    gamma=max(gamma*0.95,0.1);
     [Vw,D]=eig(U'*U+V'*V);
-    W=Vw*diag(f(diag(D)))*Vw';
-    
+    W=Vw*diag(f(diag(D), gamma))*Vw';
     time(k)=toc;
     if isfield(opts, "obj")
-        obj(k)=sum(diag(D)>0.01)+mu*norm(UV-b')^2;
+        obj(k)=opts.obj(U,V);
         if k>1
-            if abs(obj(k-1)-obj(k))/obj(k)<fTol
+            abs(obj(k-1)-obj(k))/obj(k);
+            if (obj(k-1)-obj(k))/obj(k)<fTol
                 break
             end
         end
