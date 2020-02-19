@@ -16,17 +16,14 @@ function [ U,V , obj,time] = GenASD(M,opts )
 %
 % $Date: February 1, 2019
 %_____________________________________________
-
+Omega=(M~=0);
+[m,n]=size(M);
 obj=[];time=[];
-if isfield(opts, 'mu')
-    mu=opts.mu;
-else
-    mu=10;
-end
+
 if isfield(opts, 'f')
     f=opts.f;
 else
-    f=@(x) 50^2./(50+x).^2;
+    f=@(x,gamma) gamma./(gamma+x).^2;
 end
 if isfield(opts, 'maxIter')
     maxIter=opts.maxIter;
@@ -36,12 +33,12 @@ end
 if isfield(opts, 'xTol')
     xTol=opts.xTol;
 else
-    xTol=0;
+    xTol=1e-6;
 end
 if isfield(opts, 'gamma')
     gamma=opts.gamma;
 else
-    gamma=1000;
+    gamma=300000;
 end
 
 if isfield(opts, 'exact')
@@ -55,7 +52,24 @@ if isfield(opts, 'r')
 else
     r=10;
 end
+if isfield(opts, 'gamma')
+    gamma_min=opts.gamma;
+else
+    gamma_min=norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
+end
 
+if isfield(opts, 'gamma0')
+    gamma=opts.gamma0;
+else
+    gamma=1000*norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
+end
+
+
+if isfield(opts, 'beta')
+    beta=opts.beta;
+else
+    beta=0.001;
+end
 if isfield(opts, 'ex')
     ex=opts.ex;
 else
@@ -65,7 +79,7 @@ end
 if isfield(opts, 'fTol')
     fTol=opts.fTol;
 else
-    fTol=1e-8;
+    fTol=1e-5;
 end
 
 if isfield(opts, 'scaled')
@@ -103,13 +117,13 @@ for k=1:maxIter
     
     UV=partXY(Ut', V', row, col, length(row));
     PX=sparse(row, col, UV'-b,m,n);
-    d=2*Ut*W+mu*PX*V;      
+    d=2*Ut*W+beta*PX*V;      
     if scaled 
-        d=d*inv((1/p)*mu*V'*V+W);
+        d=d*inv((1/p)*beta*V'*V+W);
     end
     gV=partXY(d', V', row, col, length(row));
     
-    t=(2*trace(d'*U*W)+(mu)*gV*(UV'-b))/(mu*norm(gV)^2+2*trace(d'*d*W));
+    t=(2*trace(d'*U*W)+(beta)*gV*(UV'-b))/(beta*norm(gV)^2+2*trace(d'*d*W));
     
     U=Ut-t*d;
     
@@ -120,27 +134,26 @@ for k=1:maxIter
     
     PX=sparse(row, col, UV'-b,m,n);
 
-    d=2*Vt*W+ mu*PX'*U;
+    d=2*Vt*W+ beta*PX'*U;
     if scaled 
-        d=d*inv((1/p)*mu*U'*U+W);
+        d=d*inv((1/p)*beta*U'*U+W);
     end
 
     Ug=partXY(U', d', row, col, length(row));
     
     
-    t= (2*trace(d'*V*W)+(mu)*Ug*(UV'-b))/(mu*norm(Ug)^2+2*trace(d'*d*W));
+    t= (2*trace(d'*V*W)+(beta)*Ug*(UV'-b))/(beta*norm(Ug)^2+2*trace(d'*d*W));
     
     V=Vt-t*d;
     
     P=[U;V];
-    gamma=max(gamma*0.95,0.1);
+    gamma=max(gamma*0.75,gamma_min);
     [Vw,D]=eig(U'*U+V'*V);
     W=Vw*diag(f(diag(D), gamma))*Vw';
     time(k)=toc;
     if isfield(opts, "obj")
         obj(k)=opts.obj(U,V);
-        if k>1
-            abs(obj(k-1)-obj(k))/obj(k);
+        if k>10
             if (obj(k-1)-obj(k))/obj(k)<fTol
                 break
             end

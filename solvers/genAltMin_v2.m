@@ -1,4 +1,4 @@
-function [X,Y,obj,time] = genAltMin_v2(M,Omega,opts)
+function [X,Y,obj_out,time] = genAltMin_v2(M,Omega,opts)
 [m,n]=size(M);
 
 if isfield(opts, 'mu')
@@ -28,10 +28,31 @@ else
 end
 
 if isfield(opts, 'gamma')
-    gamma=opts.gamma;
+    gamma_min=opts.gamma;
 else
-    gamma=100*norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
+    gamma_min=norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
 end
+
+if isfield(opts, 'gamma0')
+    gamma=opts.gamma0;
+else
+    gamma=1000*norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
+end
+
+if isfield(opts, 'beta')
+    beta_max=opts.beta;
+else
+    beta_max=0.1/gamma_min;
+end
+
+
+if isfield(opts, 'beta0')
+    beta=opts.beta0;
+else
+    beta=0.1/gamma;
+end
+
+
 
 if isfield(opts, 'fTol')
     fTol=opts.fTol;
@@ -88,26 +109,37 @@ for k=1:maxIter
     [Vw,D]=eig(X'*X+Y'*Y);
     % (sum(1- gamma./(gamma+diag(D))))/(sum(1- gamma./(gamma+diag(D0))))
     %  if (sum(1- gamma./(gamma+diag(D))))/(sum(1- gamma./(gamma+diag(D0))))>0.98
-    gamma0=gamma;
-    gamma=max(0.75*gamma, 1e-4);
     % end
     time(k)=toc;
     obj(k)=1000*(sum(1- 10./(10+diag(D))))+0.5*norm(Res)^2;
+    obj_out(k)=opts.obj(X,Y);
+    loss_function(k)=norm(Res)^2;
+    regularizer_function(k)= sum(1- gamma./(gamma+diag(D)));
     res = norm(Res);
-    if k>1; ratio = obj(k)/obj(k-1); else; ratio=0; end
+    if k>1; 
+    	ratio = sqrt(obj(k)/obj(k-1));
+    	reg_ratio=sum(1- gamma./(gamma+diag(D)))/sum(1- gamma./(gamma+diag(D0)));
+    	loss_ratio=norm(Res)/norm(Res0);
+	else; 
+		ratio=0; 
+		reg_ratio=0;
+		loss_ratio=0;
+	end
     
     % adjust alf
     if rank_reset; rank_reset=0;
     else
-        if ratio > 1
+        if ratio > 1 
             increment = max([0.1*alf, 0.1*increment,0.5]);
-            X = X0; Y = Y0; Res = Res0; res = res0; obj(k)=obj(k-1);
+            
+            if reg_ratio>1 && loss_ratio>1; disp("theyre both bad");X = X0; Y = Y0; Res = Res0; res = res0; obj(k)=obj(k-1); end;
             alf = 0;    if Zfull; Z = Z0;end
         elseif ratio > 0.7
             increment = max(increment, 0.25*alf);
             alf = alf+ increment;
         end
     end
+    alf=0;
 %     if r>sum(diag(D)>0.01)
 %         r=sum(diag(D)>0.01)
 %         %X0=X;Y0=Y;
@@ -134,19 +166,19 @@ for k=1:maxIter
         % delta = max(delta);
     end
     
-    
+    gamma0=gamma;
+    gamma=max(0.75*gamma, gamma_min);
+
     [Vw,D]=eig(X'*X+Y'*Y);
-    
-    W=10*gamma*Vw*diag((gamma./(gamma+diag(D)).^2))*Vw';
-    if rank_reset; W=10*gamma*eye(r);end
-    %W=(alf +1)*W-alf*W0;
+    beta=min(beta_max, 1.33*beta);
+    W=(1/beta)*Vw*diag((gamma./(gamma+diag(D)).^2))*Vw';
 
     %W=0;
     
     fprintf('it: %5i rk: %4d, rel. %3.1e r. %4.4f chg: %3.1e alf: %3.1e gamma: %3.1e delta: %3.1e\n ',...
         k,sum(diag(D)>0.01), res,ratio,obj(k),alf,gamma, delta);
     
-    if delta<1e-8
+    if delta<1e-7
         break
     end
     

@@ -1,8 +1,8 @@
 clear
-m=1000;
-n=500;
-r=10;
-d=0.3;
+m=300;
+n=200;
+r=5;
+d=0.05;
 p=0.1;
 
 
@@ -24,7 +24,7 @@ opts.obj=@(U,V) sum(1- gamma./(gamma+eig([U;V]'*[U;V])))...
 norm(D-U_sor*V_sor','fro')/norm(D,'fro')
 
 Omega=(M~=0);
-opts.beta=0.001;
+opts.beta=0.005;
 
 [ U_ASD,V_ASD , obj_ASD,time_ASD] = GenASD(M,opts);
 norm(D-U_ASD*V_ASD','fro')/norm(D,'fro')

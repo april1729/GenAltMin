@@ -64,7 +64,11 @@ if isfield(opts, 'fTol')
 else
     fTol=1e-5;
 end
-
+if isfield(opts, 'gamma')
+    gamma=opts.gamma;
+else
+    gamma=1000;
+end
 
 [m,n]=size(X0);
 
@@ -95,7 +99,7 @@ for k=1:maxIter
     P=[U;V];
     
     [Vw,D]=eig(U'*U+V'*V);
-    W=Vw*diag(f(diag(D)))*Vw';
+    W=Vw*diag(f(diag(D),gamma))*Vw';
     time(k)=toc;
 
     
