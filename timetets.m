@@ -1,10 +1,9 @@
 clear;
-m=5000;n=1000;r=13;d=0.1;p=0.3;
-%m=10;n=10;r=2;d=0;p=0.3;
+m=300;n=500;r=5;d=0.1;p=0.05;
 [D, A, b,M]=generateMatrixCompletionProblem(m,n,r,p, d);
 opts.r=2*r;
 opts.mu=0.1;
-opts.gamma=1e5;
+opts.gamma=1e20;
 opts.maxIter=500;
 opts.f=@(x,gamma) 1000* gamma./(gamma+x).^2;
 [rows,cols]=ind2sub([m,n], find(M~=0));
@@ -26,5 +25,3 @@ opts.maxIter=5000;
 tic;[X,Y,obj,time] =  genAltMin_v2(M,Omega,opts);toc;
 norm(D-X*Y','fro')/norm(D,'fro')
 
-tic; [ U,V , obj,time] = GenASD(M,opts ); toc;
-norm(D-U*V','fro')/norm(D,'fro')

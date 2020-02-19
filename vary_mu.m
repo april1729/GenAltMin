@@ -1,8 +1,8 @@
 clear
 n=100;
 m=200;
-r=10;
-noiseLevel=.1;
+r=5;
+noiseLevel=.01;
 numRuns=10;
 
 
@@ -16,22 +16,23 @@ for run=1:1
         
         
         
-        opts.r=20;
+        opts.r=10;
         opts.maxIter=200;
         opts.mu=mu_range(i);
-        opts.xTol=1e-5;
-        opts.f=@(x) 100*50./(50+x).^2;
+        opts.beta=mu_range(i);
+
+        opts.xTol=1e-10;
+        opts.f=@(x) 1;
         
         opts.obj=@(U,V) obj(U*V', @(x) 5*x, opts.f, opts.mu, A, b);
         
-        [ U_ti,V_ti , obj_nuc] = GenAltMinSD(M,A,b,opts );
+        [ U_ti,V_ti , obj_nuc] = GenAltMin(M,A,b,opts );
         error(i, 1,run)=norm(U_ti*V_ti'-D,'fro')/norm(D, 'fro');
         rank_list(i,1,run)=sum(svd(U_ti*V_ti')>0.0001);
         epsilon(i,1,run)=norm(A*vec(U_ti*V_ti')-b,'fro');
         
-        opts.f=@(x) 1;
         
-        [ U_nuc, V_nuc, obj_ti] = GenAltMinSD(M,A,b,opts );
+        [ U_nuc, V_nuc, obj_ti] = genAltMin_v2(M,(M~=0),opts);
         error(i, 2, run)=norm(U_nuc*V_nuc'-D,'fro')/norm(D, 'fro');
         rank_list(i,2,run)=sum(svd(U_nuc*V_nuc')>0.0001);
         epsilon(i,2,run)=norm(A*vec(U_nuc*V_nuc')-b,'fro');
@@ -59,11 +60,10 @@ for run=1:1
 end
 
 figure()
-semilogx(epsilon, mean(error,3),'linewidth', 4)
+semilogx(mu_range, mean(error,3),'linewidth', 4)
 hold on
-eps_range=min(min(epsilon)):0.1:max(max(epsilon));
-semilogx(eps_range, ones(size(eps_range))*norm(A*vec(D)-b)/norm(b),'--','linewidth', 4)
+semilogx(mu_range, ones(size(mu_range))*norm(A*vec(D)-b)/norm(b),'--','linewidth', 4)
 xlabel("\epsilon")
 ylabel("Relative Frobenious Norm Error")
-legend(["Trace Inverse","Nuclear Norm", "Noisy matrix"])
+legend(["Nuclear Norm","Trace Inverse", "Noisy matrix"])
 set(gca,'fontsize', 24);

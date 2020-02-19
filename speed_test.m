@@ -1,50 +1,48 @@
-m=300;
-n=200;
+clear
+m=1000;
+n=500;
+r=10;
+d=0.3;
+p=0.1;
 
-[D, A, b,M]=generateMatrixCompletionProblem(m,n,5,0.4, 0.1);
+
+[D, A, b,M]=generateMatrixCompletionProblem(m,n,r,p,d);
+Omega=(M~=0);
 [~,j] = find(A);
 [rows,cols]=ind2sub([m,n], j);
+opts.r=2*r;
+opts.maxIter=400;
+gamma=norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
 
-
-
-opts.r=10;
-opts.maxIter=200;
-opts.mu=0.01;
-opts.xTol=1e-4;
-
-gamma=norm(b)/sqrt(2*0.4*10);
-
-opts.f=@(x) gamma./(gamma+x).^2;
-
+%opts.obj=@(U,V) norm(D-U*V','fro')/norm(D,'fro');
 opts.obj=@(U,V) sum(1- gamma./(gamma+eig([U;V]'*[U;V])))...
-    +(opts.mu/2)*norm(A*vec(sparse_multiply(U,V, rows, cols,m,n))-b)^2;
+        +(0.001/2)*norm(A*vec(sparse_multiply(U,V, rows, cols,m,n))-b)^2;
 
-opts.ex=0;
 
-[ U_ASD,V_ASD , obj_ASD,time_ASD] = GenASD(M,A,b,opts );
+
+[ U_sor,V_sor , obj_sor,time_sor] = genAltMin_v2(M,Omega,opts);
+norm(D-U_sor*V_sor','fro')/norm(D,'fro')
+
+Omega=(M~=0);
+opts.beta=0.001;
+
+[ U_ASD,V_ASD , obj_ASD,time_ASD] = GenASD(M,opts);
 norm(D-U_ASD*V_ASD','fro')/norm(D,'fro')
-% opts.ex=0;
-% [ U_ASD0,V_ASD0 , obj_ASD0,time_ASD0] = GenASD(M,A,b,opts );
-%norm(D-U_ASD0*V_ASD0','fro')/norm(D,'fro')
 
-opts.maxIter=200;
-[ U,V , obj,time] = GenAltMin(M,A,b,opts );
-norm(D-U*V','fro')/norm(D,'fro')
+
+opts.gamma=100;
+
+opts.maxIter=500;
+%[ U,V , obj,time] = GenAltMin(M,A,b,opts );
+%norm(D-U*V','fro')/norm(D,'fro')
 
 figure()
 semilogy(time_ASD, obj_ASD,'-o', 'MarkerSize', 2,'LineWidth',1);
 hold on
-semilogy(time, obj,'-s','LineWidth',1);
+semilogy(time_sor, obj_sor,'-o', 'MarkerSize', 2,'LineWidth',1);
+
+%semilogy(time, obj,'-s','LineWidth',1);
 xlabel("Time (s)")
-ylabel("Objective")
-legend(["ASD","AltMin"])
+ylabel("RFNE")
+legend(["Alternating Steepest Descent","SOR", "Alternating Minimization"])
 set(gca,'fontsize', 14);
-
-
-% figure()
-% loglog( obj_ASD);
-% hold on
-% loglog( obj_ASD0);
-% xlabel("iteration")
-% ylabel("Objective")
-% legend(["ASD with Extrapolation Term","ASD without Extrapolation Term"])
