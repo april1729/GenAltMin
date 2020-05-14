@@ -1,3 +1,4 @@
+load_path
 clear
 load test_parameters
 T=table('RowNames', {'m', 'n', 'r', 'noise', 'p',  '__','GenAltMin (Trace Inverse)', 'GenASD (Trace Inverse)', 'FaNCL',...

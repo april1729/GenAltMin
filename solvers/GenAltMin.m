@@ -18,15 +18,15 @@ function [ U,V , obj,time] = GenAltMin(X0,A,b,opts )
 %_____________________________________________
 
 obj=[];time=[];
-if isfield(opts, 'mu')
-    mu=opts.mu;
+if isfield(opts, 'beta')
+    beta=opts.beta;
 else
-    mu=10;
+    beta=10;
 end
 if isfield(opts, 'f')
     f=opts.f;
 else
-    f=@(x) 50^2./(50+x).^2;
+    f=@(x,gamma) gamma^2./(gamma+x).^2;
 end
 if isfield(opts, 'maxIter')
     maxIter=opts.maxIter;
@@ -41,16 +41,11 @@ end
 if isfield(opts, 'SDopts')
     SDopts=opts.SDopts;
 else
-    SDopts.maxIter=15;
+    SDopts.maxIter=25;
     SDopts.xTol=1e-5;
     SDopts.fTol=1e-5;
 end
 
-if isfield(opts, 'exact')
-    exact=opts.exact;
-else
-    exact=false;
-end
 
 if isfield(opts, 'r')
     r=opts.r;
@@ -67,7 +62,7 @@ end
 if isfield(opts, 'gamma')
     gamma=opts.gamma;
 else
-    gamma=1000;
+    gamma=100;
 end
 
 [m,n]=size(X0);
@@ -77,7 +72,6 @@ U=U*sqrt(D);
 V=V*sqrt(D);
 P=[U;V];
 
-Lambda=zeros(size(b));
 W=eye(r);
 [~,j] = find(A);
 [rows,cols]=ind2sub([m,n], j);
@@ -85,14 +79,14 @@ tic;
 for k=1:maxIter
     Pold=P;
     
-    funU=@(x) objectiveU(x,V,W,A,b-Lambda,mu);
-    stepFunU=@(x,d) tu(x,V,W,A,b,mu,d);
+    funU=@(x) objectiveU(x,V,W,A,b,beta);
+    stepFunU=@(x,d) tu(x,V,W,A,b,beta,d);
     
     
     U=steepestDescent(U, funU, stepFunU, SDopts);
     
-    funV=@(x) objectiveV(U,x,W,A,b-Lambda,mu);
-    stepFunV=@(x,d) tv(U,x,W,A,b,mu,d);
+    funV=@(x) objectiveV(U,x,W,A,b,beta);
+    stepFunV=@(x,d) tv(U,x,W,A,b,beta,d);
     
     V=steepestDescent(V, funV, stepFunV, SDopts);
     
@@ -114,31 +108,35 @@ for k=1:maxIter
     if ((norm(P-Pold,'fro')/norm(Pold,'fro'))<xTol)
         break
     end
+    if print_bool && k>1
+        fprintf("it:  %i  rank:  %i  obj:  %f  rel: %f  gamma: %f \n", k, sum(diag(D)>0.0001), obj(k), abs(obj(k-1)-obj(k)), gamma)
+    end
+
 end
 
-    function [f,g]=objectiveU(x,V,W,A,b,mu)
-        f=trace(W*(x'*x))+(mu/2)*norm(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b,'fro')^2;
-        g=2*x*W+mu*reshape(A'*(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b),[m,n])*V;
+    function [f,g]=objectiveU(x,V,W,A,b,beta)
+        f=trace(W*(x'*x))+(beta/2)*norm(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b,'fro')^2;
+        g=2*x*W+beta*reshape(A'*(A*vec(sparse_multiply(x,V, rows, cols,m,n))-b),[m,n])*V;
     end
 
-    function [f,g]=objectiveV(U,x,W,A,b,mu)
-        f=trace(W*(x'*x))+(mu/2)*norm(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b,'fro')^2;
-        g=2*x*W+ mu*reshape(A'*(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b),[m,n])'*U;
+    function [f,g]=objectiveV(U,x,W,A,b,beta)
+        f=trace(W*(x'*x))+(beta/2)*norm(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b,'fro')^2;
+        g=2*x*W+ beta*reshape(A'*(A*vec(sparse_multiply(U,x, rows, cols,m,n))-b),[m,n])'*U;
     end
 
 
-    function [t]=tu(U,V,W,A,b,mu,g)
+    function [t]=tu(U,V,W,A,b,beta,g)
         UV=sparse_multiply(U,V, rows, cols,m,n);
         gV=sparse_multiply(g,V, rows, cols,m,n);
-        t=(2*trace(g'*U*W)+(mu)*(A*vec(gV))'*(A*(vec(UV))-b))/(mu*norm(A*vec(gV), 'fro')^2+2*trace(g'*g*W));
+        t=(2*trace(g'*U*W)+(beta)*(A*vec(gV))'*(A*(vec(UV))-b))/(beta*norm(A*vec(gV), 'fro')^2+2*trace(g'*g*W));
     end
 
-    function t=tv(U,V,W,A,b,mu,g)
+    function t=tv(U,V,W,A,b,beta,g)
         
         
         UV=sparse_multiply(U,V, rows, cols,m,n);
         Ug=sparse_multiply(U,g, rows, cols,m,n);
-        t=(2*trace(g'*V*W)+(mu)*(A*vec(Ug))'*(A*(vec(UV))-b))/(mu*norm(A*vec(Ug), 'fro')^2+2*trace(g'*g*W));
+        t=(2*trace(g'*V*W)+(beta)*(A*vec(Ug))'*(A*(vec(UV))-b))/(beta*norm(A*vec(Ug), 'fro')^2+2*trace(g'*g*W));
         
     end
 end

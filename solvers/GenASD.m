@@ -35,12 +35,6 @@ if isfield(opts, 'xTol')
 else
     xTol=1e-6;
 end
-if isfield(opts, 'gamma')
-    gamma=opts.gamma;
-else
-    gamma=300000;
-end
-
 if isfield(opts, 'exact')
     exact=opts.exact;
 else
@@ -55,7 +49,7 @@ end
 if isfield(opts, 'gamma')
     gamma_min=opts.gamma;
 else
-    gamma_min=norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
+    gamma_min=0.05*norm(M,'fro')/(sqrt(sum(sum(Omega))/(m*n))*r);
 end
 
 if isfield(opts, 'gamma0')
@@ -86,6 +80,12 @@ if isfield(opts, 'scaled')
     scaled=opts.scaled;
 else
     scaled=0;
+end
+
+if isfield(opts, 'print')
+    print_bool=opts.print_bool;
+else
+    print_bool=1;
 end
 
 [m,n]=size(M);
@@ -147,14 +147,14 @@ for k=1:maxIter
     V=Vt-t*d;
     
     P=[U;V];
-    gamma=max(gamma*0.75,gamma_min);
+    gamma=max(gamma*0.85,gamma_min);
     [Vw,D]=eig(U'*U+V'*V);
     W=Vw*diag(f(diag(D), gamma))*Vw';
     time(k)=toc;
     if isfield(opts, "obj")
         obj(k)=opts.obj(U,V);
-        if k>10
-            if (obj(k-1)-obj(k))/obj(k)<fTol
+        if k>15
+            if abs(obj(k-1)-obj(k))<fTol
                 break
             end
         end
@@ -163,7 +163,9 @@ for k=1:maxIter
         break
     end
     
-    
+    if print_bool && k>1
+        fprintf("it:  %i  rank:  %i  obj:  %f  rel: %f  gamma: %f \n", k, sum(diag(D)>0.0001), obj(k), abs(obj(k-1)-obj(k)), gamma)
+    end
 end
 end
 

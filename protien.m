@@ -1,3 +1,4 @@
+load_path
 opts.exact=false;
 opts.maxIter=70;
 opts.mu=1e-4;

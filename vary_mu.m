@@ -1,69 +1,76 @@
+load_path
 clear
-n=100;
-m=200;
-r=5;
-noiseLevel=.01;
-numRuns=10;
+m=1000;
+n=500;
+r=10;
+noiseLevel=.1;
+numRuns=20;
+
+p=0.1;
 
 
-p=0.4;
-mu_range=[0.1,1,10,100,1000];
-[D, A, b,M]=generateMatrixCompletionProblem(m,n,r,p, noiseLevel);
+opts.r=2*r;
+opts.maxIter=2000;
+opts.xTol=1e-7;
+opts.beta=0.1;
+gamma=50;
+opts.gamma=gamma;
 
-for run=1:1
+
+
+beta_range=[1,0.1,0.05,0.01,0.001,1e-4]
+for run=1:numRuns
     figure()
-    for i=1:length(mu_range)
+    
+    [D, A, b,M]=generateMatrixCompletionProblem(m,n,r,p, noiseLevel);
+    Omega=(M~=0);
+    [~,j] = find(A);
+    [rows,cols]=ind2sub([m,n], j);
+    opts.obj=@(U,V) sum(1- gamma./(gamma+eig([U;V]'*[U;V])))...
+        +(0.001/2)*norm(A*vec(sparse_multiply(U,V, rows, cols,m,n))-b)^2;
+    
+    for i=1:length(beta_range)
+        beta=beta_range(i);
+        opts.beta=beta;
         
         
-        
-        opts.r=10;
-        opts.maxIter=200;
-        opts.mu=mu_range(i);
-        opts.beta=mu_range(i);
-
-        opts.xTol=1e-10;
-        opts.f=@(x) 1;
-        
-        opts.obj=@(U,V) obj(U*V', @(x) 5*x, opts.f, opts.mu, A, b);
-        
-        [ U_ti,V_ti , obj_nuc] = GenAltMin(M,A,b,opts );
+        [ U_ti,V_ti , obj_nuc] = GenASD(M,opts );
         error(i, 1,run)=norm(U_ti*V_ti'-D,'fro')/norm(D, 'fro');
         rank_list(i,1,run)=sum(svd(U_ti*V_ti')>0.0001);
-        epsilon(i,1,run)=norm(A*vec(U_ti*V_ti')-b,'fro');
         
+        [X]=svt(M, Omega,opts.beta, 2*r);
         
-        [ U_nuc, V_nuc, obj_ti] = genAltMin_v2(M,(M~=0),opts);
-        error(i, 2, run)=norm(U_nuc*V_nuc'-D,'fro')/norm(D, 'fro');
-        rank_list(i,2,run)=sum(svd(U_nuc*V_nuc')>0.0001);
-        epsilon(i,2,run)=norm(A*vec(U_nuc*V_nuc')-b,'fro');
-        subplot(length(mu_range),2,2*i-1)
-        bar([svds(D,10), svds(U_nuc*V_nuc',10), svds(U_ti*V_ti',10)])
+        error(i, 2, run)=norm(X-D,'fro')/norm(D, 'fro');
+        rank_list(i,2,run)=sum(svd(X)>0.0001);
+        
+        subplot(length(beta_range),2,2*i-1)
+        bar([svds(D,r), svds(X,r), svds(U_ti*V_ti',r)])
         xlabel("Index")
         ylabel("Singular Value")
-        title("\mu="+opts.mu)
+        title("\beta="+beta)
         %legend(["Original Matrix", "Nuclear Norm", "Trace Inverse"])
         set(gca,'fontsize', 10);
         
-        subplot(length(mu_range),2,2*i)
+        subplot(length(beta_range),2,2*i)
         data1=svds(D,20);
-        data2=svds(U_nuc*V_nuc',20);
-        data3=svds(U_ti*V_ti',20);
-        bar(11:20,[data1(11:20),data2(11:20),data3(11:20) ])
+        data2=svds(X,2*r);
+        data3=svds(U_ti*V_ti',2*r);
+        bar(r+1:2*r,[data1(r+1:2*r),data2(r+1:2*r),data3(r+1:2*r) ])
         %xlabel("Index")
-        title("\mu="+opts.mu)
         % ylabel("Singular Value")
         
-        legend(["Original Matrix", "Nuclear Norm", "Trace Inverse"])
+        %
         set(gca,'fontsize', 10);
         
     end
 end
+legend(["Original Matrix", "Nuclear Norm", "Trace Inverse"])
 
 figure()
-semilogx(mu_range, mean(error,3),'linewidth', 4)
-hold on
-semilogx(mu_range, ones(size(mu_range))*norm(A*vec(D)-b)/norm(b),'--','linewidth', 4)
-xlabel("\epsilon")
+semilogx(beta_range, mean(error,3),'linewidth', 4)
+xlabel("\beta")
 ylabel("Relative Frobenious Norm Error")
-legend(["Nuclear Norm","Trace Inverse", "Noisy matrix"])
-set(gca,'fontsize', 24);
+legend(["Trace Inverse","Nuclear Norm", "Noisy matrix"])
+set(gca,'fontsize', 12);
+
+error

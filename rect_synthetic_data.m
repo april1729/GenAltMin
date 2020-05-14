@@ -1,57 +1,37 @@
+load_path
 clear
-n=100;
-m=200;
+n=1000;
+m=500;
 r=10;
 noiseLevel=.1;
-numRuns=10;
-
+numRuns=1;
 
 p_range=0.2:0.1:1;
-for run=1:1
-    figure()
+
+opts.r=2*r;
+opts.maxIter=2000;
+opts.xTol=1e-7;
+opts.beta=1e-3;
+gamma=0.1;
+opts.gamma=gamma;
+
+for run=1:numRuns
     for i=1:length(p_range)
         [D, A, b,M]=generateMatrixCompletionProblem(m,n,r,p_range(i), noiseLevel);
+        Omega=(M~=0);
+        [~,j] = find(A);
+        [rows,cols]=ind2sub([m,n], j);
+        opts.obj=@(U,V) sum(1- gamma./(gamma+eig([U;V]'*[U;V])))...
+            +(0.001/2)*norm(A*vec(sparse_multiply(U,V, rows, cols,m,n))-b)^2;
         
-        
-        
-        opts.r=20;
-        opts.maxIter=2000;
-        opts.mu=1;
-        opts.xTol=1e-7;
-        opts.f=@(x) 100*50./(50+x).^2;
-        
-        opts.obj=@(U,V) obj(U*V', @(x) 5*x, opts.f, opts.mu, A, b);
-        
-        [ U_ti,V_ti , obj_nuc] = GenASD(M,A,b,opts );
+        [ U_ti,V_ti , obj_nuc] = GenASD(M,opts );
         error(i, 1,run)=norm(U_ti*V_ti'-D,'fro')/norm(D, 'fro');
         rank_list(i,1,run)=sum(svd(U_ti*V_ti')>0.0001);
         
+        [X]=svt(M, Omega,1, 2*r);
         
-        opts.f=@(x) 1;
-        
-        [ U_nuc, V_nuc, obj_ti] = GenASD(M,A,b,opts );
-        error(i, 2, run)=norm(U_nuc*V_nuc'-D,'fro')/norm(D, 'fro');
-        rank_list(i,2,run)=sum(svd(U_nuc*V_nuc')>0.0001);
-        
-        subplot(length(p_range),2,2*i-1)
-        bar([svds(D,10), svds(U_nuc*V_nuc',10), svds(U_ti*V_ti',10)])
-        xlabel("Index")
-        ylabel("Singular Value")
-        title(p_range(i)+"%")
-        %legend(["Original Matrix", "Nuclear Norm", "Trace Inverse"])
-        set(gca,'fontsize', 10);
-        
-        subplot(length(p_range),2,2*i)
-        data1=svds(D,20);
-        data2=svds(U_nuc*V_nuc',20);
-        data3=svds(U_ti*V_ti',20);
-        bar(11:20,[data1(11:20),data2(11:20),data3(11:20) ])
-        %xlabel("Index")
-        title(p_range(i)+"%")
-       % ylabel("Singular Value")
-        
-        %legend(["Original Matrix", "Nuclear Norm", "Trace Inverse"])
-        set(gca,'fontsize', 10);
+        error(i, 2, run)=norm(X-D,'fro')/norm(D, 'fro');
+        rank_list(i,2,run)=sum(svd(X)>0.0001);
         
     end
 end
@@ -65,4 +45,4 @@ ylabel("Relative Frobenious Norm Error")
 legend(["Trace Inverse","Nuclear Norm", "Noisy matrix"])
 set(gca,'fontsize', 12);
 
-
+error
