@@ -8,7 +8,10 @@ try
     A_train = fscanf(trainingFile,formatSpec,[4, inf]);
 catch 
     fprintf("Downloading MovieLens100k Dataset...\n");
-    unzip(URL)
+    websave('data\ml-100k\ml-100k.zip', URL)
+    unzip('data\ml-100k\100k-100k.zip', 'data\ml-100k');
+    addpath('data\ml-100k\ml-100k')
+
     fprintf("Done!\n")
     trainingFile=fopen("u"+fold+".base", 'r');
     testingFile=fopen("u"+fold+".test",'r');
