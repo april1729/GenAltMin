@@ -4,6 +4,11 @@ try
 catch 
     fprintf("Downloading Jester Dataset...\n")
     URL='https://goldberg.berkeley.edu/jester-data/jester-data-1.zip';
+    websave('data\jester\jester-data-1.zip', URL)
+    unzip('data\jester\jester-data-1.zip', 'data\jester\jester-data-1');
+    addpath('data\jester\jester-data-1')
+
+
     raw_data=xlsread('jester-data-1.xls');
     fprintf("Done \n")
 end
