@@ -1,5 +1,8 @@
 URL='http://files.grouplens.org/datasets/movielens/ml-1m.zip';
-unzip(URL);
+websave('data\ml-1m\ml-1m.zip', URL)
+unzip('data\ml-1m\ml-1m.zip', 'data\ml-1m');
+addpath('data\ml-1m\ml-1m')
+
 
 
 %% Initialize variables.
